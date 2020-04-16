@@ -10,8 +10,9 @@ Input.attributes.add('type', {
     ],
     default : 'text'
 });
-Input.attributes.add('fontSize', { type : 'number', default : 16 });
-Input.attributes.add('padding', { type : 'number', default : 16 });
+Input.attributes.add('maxLength', { type : 'number', default : 64 });
+Input.attributes.add('fontSize', { type : 'number', default : 1 });
+Input.attributes.add('padding', { type : 'number', default : 1 });
 Input.attributes.add('scaleUnit', {
     type: 'string',
     enum: [
@@ -22,6 +23,7 @@ Input.attributes.add('scaleUnit', {
     default : 'vw'
 });
 Input.attributes.add('color', { type : 'rgb' });
+Input.attributes.add('whitePlaceholder', { type : 'boolean' });
 Input.attributes.add('fontFamily', { type : 'string', default : 'Arial, sans-serif' });
 Input.attributes.add('storeValue', { type : 'boolean' });
 
@@ -43,10 +45,19 @@ Input.prototype.initialize = function() {
     this.element.style.padding = this.padding + this.scaleUnit;
     this.element.style.boxSizing = 'border-box';
     
+    if(this.maxLength > 0){
+        this.element.maxlength = this.maxLength;
+    }
+    
     var color = 'rgb(' + (this.color.r * 255) + ', ' + (this.color.g * 255) + ', ' + (this.color.b * 255) + ')';
     this.element.style.color = color;
     
     this.element.style.outline = 'none';
+    
+    if(this.whitePlaceholder){
+        this.element.className = 'white-placeholder';
+    }
+    
     document.body.appendChild(this.element);
     
     //disable focus entity
@@ -59,13 +70,13 @@ Input.prototype.initialize = function() {
     
     this.element.onchange = this.onChange.bind(this);
     
-    if(this.storeValue){
+    //if(this.storeValue){
         var value = window.localStorage.getItem(this.entity._guid);
         
         if(value){
             this.setValue(window.localStorage.getItem(this.entity._guid));   
         }
-    }
+    //}
     
     this.updateStyle();
     
@@ -76,6 +87,11 @@ Input.prototype.initialize = function() {
             this.element.style.display = 'none'; 
         }
     }, this);
+};
+
+Input.prototype.store = function() {
+    this.storeValue = true;
+    this.onChange();
 };
 
 Input.prototype.onFocus = function() {
@@ -95,12 +111,13 @@ Input.prototype.onChange = function() {
 Input.prototype.updateStyle = function() {
     if(this.entity.element.screenCorners){
         var position = this.entity.element.screenCorners;
+        var ratio = 1 / this.app.graphicsDevice.maxPixelRatio;
     
-        this.element.style.left = position[0].x + 'px';
-        this.element.style.bottom = position[0].y + 'px';
+        this.element.style.left = position[0].x * ratio + 'px';
+        this.element.style.bottom = position[0].y * ratio + 'px';
 
-        this.element.style.width = (position[2].x - position[0].x) + 'px';
-        this.element.style.height = (position[2].y - position[0].y) + 'px';
+        this.element.style.width = (position[2].x - position[0].x) * ratio + 'px';
+        this.element.style.height = (position[2].y - position[0].y) * ratio + 'px';
     }
 };
 
@@ -113,5 +130,19 @@ Input.prototype.setValue = function(value) {
 };
 
 Input.prototype.getValue = function() {
-    return this.element.value;
+    if(this.element){
+        return this.element.value;   
+    }
+};
+
+Input.prototype.focus = function() {
+    if(this.element){
+        this.element.focus();
+    }
+};
+
+Input.prototype.blur = function() {
+    if(this.element){
+        this.element.blur();
+    }
 };
