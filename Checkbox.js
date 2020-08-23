@@ -8,6 +8,8 @@ Checkbox.attributes.add('connected', { type : 'entity' });
 Checkbox.attributes.add('triggerFunction', { type : 'string' });
 
 Checkbox.prototype.initialize = function() {
+    this.timeout = false;
+    
     if(this.storeWithName){
         this.elementId = this.entity.name;
     }else{
@@ -30,6 +32,11 @@ Checkbox.prototype.initialize = function() {
     document.body.appendChild(this.element);
     
     this.updateStyle();
+    window.addEventListener('resize', this.updateStyle.bind(this));
+    
+    if(this.sleepValue !== null){
+        this.setValue(this.sleepValue);
+    }
     
     this.on('state', function(self){
         if(this.entity.enabled){
@@ -64,24 +71,30 @@ Checkbox.prototype.onChange = function() {
 };
 
 Checkbox.prototype.updateStyle = function() {
-    if(this.entity.element.screenCorners){
-        var position = this.entity.element.screenCorners;
-        var ratio = 1 / this.app.graphicsDevice.maxPixelRatio;
+    clearTimeout(this.timeout);
     
-        this.element.style.left = position[0].x * ratio + 'px';
-        this.element.style.bottom = position[0].y * ratio + 'px';
+    //wait for DOM process
+    this.timeout = setTimeout(function(self){
+        if(self.entity && self.entity.element && self.entity.element.screenCorners){
+            var position = self.entity.element.screenCorners;
+            var ratio = 1 / self.app.graphicsDevice.maxPixelRatio;
 
-        this.element.style.width = (position[2].x - position[0].x) * ratio + 'px';
-        this.element.style.height = (position[2].y - position[0].y) * ratio + 'px';
-    }
-};
+            self.element.style.left = position[0].x * ratio + 'px';
+            self.element.style.bottom = position[0].y * ratio + 'px';
 
-Checkbox.prototype.update = function(dt) {
-    this.updateStyle();
+            self.element.style.width = (position[2].x - position[0].x) * ratio + 'px';
+            self.element.style.height = (position[2].y - position[0].y) * ratio + 'px';
+        }
+    }, 100, this);
 };
 
 Checkbox.prototype.setValue = function(value) {
-    this.element.checked = value;
+    if(!this.element){
+        this.sleepValue = value;
+    }else{
+        this.element.checked = value;
+        this.sleepValue = false;
+    }
 };
 
 Checkbox.prototype.getValue = function() {
