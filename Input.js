@@ -28,8 +28,16 @@ Input.attributes.add('fontFamily', { type : 'string', default : 'Arial, sans-ser
 Input.attributes.add('storeValue', { type : 'boolean' });
 
 Input.attributes.add('focusEntity', { type : 'entity' });
+Input.attributes.add('sleepValue', { type : 'string' });
+Input.attributes.add('blurFunction', { type : 'string' });
 
 Input.prototype.initialize = function() {
+    this.timeout = false;
+    this.isDestroyed = false;
+    
+    this.currentWidth = 0;
+    this.currentHeight = 0;
+    
     this.element = document.createElement('input');
     this.element.placeholder = this.placeholder;
     
@@ -46,7 +54,7 @@ Input.prototype.initialize = function() {
     this.element.style.boxSizing = 'border-box';
     
     if(this.maxLength > 0){
-        this.element.maxlength = this.maxLength;
+        this.element.maxLength = this.maxLength;
     }
     
     var color = 'rgb(' + (this.color.r * 255) + ', ' + (this.color.g * 255) + ', ' + (this.color.b * 255) + ')';
@@ -68,6 +76,10 @@ Input.prototype.initialize = function() {
         this.element.onblur = this.onBlur.bind(this);
     }
     
+    if(this.blurFunction){
+        this.element.onblur = this.onBlurFunction.bind(this);
+    }
+    
     this.element.onchange = this.onChange.bind(this);
     
     //if(this.storeValue){
@@ -80,13 +92,54 @@ Input.prototype.initialize = function() {
     
     this.updateStyle();
     
+    this.app.on('DOM:Clear', this.onDOMClear, this);
+    this.app.on('DOM:Update', this.onDomUpdate, this);
+    this.app.on('Input:' + this.entity.name, this.setResultValue, this);
+    
+    if(this.sleepValue){
+        this.setValue(this.sleepValue);
+    }
+    
     this.on('state', function(self){
         if(this.entity.enabled){
-            this.element.style.display = 'block'; 
+            this.element.style.display = 'block';
         }else{
             this.element.style.display = 'none'; 
         }
     }, this);
+    
+    this.on('destroy', function(self){
+        this.onDestroy();
+    }, this);
+};
+
+Input.prototype.onBlurFunction = function(){
+    var blurFunctions = this.blurFunction.split(', ');
+
+    if(blurFunctions.length > 0){
+        for(var blurIndex in blurFunctions){
+            var blurFunction = blurFunctions[blurIndex];
+            var parts = blurFunction.split('\@');
+            var key   = parts[0];
+
+            if(parts.length > 1){
+                var value = parts[1];
+
+                this.app.fire(key, value);
+            }else{
+                this.app.fire(key);
+            }
+        }
+    }
+};
+
+Input.prototype.onDOMClear = function(){
+    this.entity.destroy();  
+};
+
+Input.prototype.onDestroy = function(){
+    this.isDestroyed = true;
+    this.element.remove();
 };
 
 Input.prototype.store = function() {
@@ -108,25 +161,65 @@ Input.prototype.onChange = function() {
     }
 };
 
-Input.prototype.updateStyle = function() {
-    if(this.entity.element.screenCorners){
-        var position = this.entity.element.screenCorners;
-        var ratio = 1 / this.app.graphicsDevice.maxPixelRatio;
-    
-        this.element.style.left = position[0].x * ratio + 'px';
-        this.element.style.bottom = position[0].y * ratio + 'px';
+Input.prototype.onDomUpdate = function(){
+    this._updateStyle();
+};
 
-        this.element.style.width = (position[2].x - position[0].x) * ratio + 'px';
-        this.element.style.height = (position[2].y - position[0].y) * ratio + 'px';
+Input.prototype.updateStyle = function() {
+    if(
+        this.currentWidth == window.innerWidth &&
+        this.currentHeight == window.innerHeight
+    ){
+        return false;
+    }
+    
+    this._updateStyle();
+    
+    this.currentWidth = window.innerWidth;
+    this.currentHeight = window.innerHeight;
+};
+
+Input.prototype._updateStyle = function() {
+    if(this.isDestroyed){
+        return false;
+    }
+    
+    var self = this;
+    
+    if(self.entity && self.entity.element && self.entity.element.screenCorners){
+        var position = self.entity.element.screenCorners;
+        var ratio = 1 / self.app.graphicsDevice.maxPixelRatio;
+
+        self.element.style.left = position[0].x * ratio + 'px';
+        self.element.style.bottom = position[0].y * ratio + 'px';
+
+        self.element.style.width = (position[2].x - position[0].x) * ratio + 'px';
+        self.element.style.height = (position[2].y - position[0].y) * ratio + 'px';
     }
 };
 
-Input.prototype.update = function(dt) {
-    this.updateStyle();
+Input.prototype.setResultValue = function(data) {
+    if(!data){
+        return false;
+    }
+    
+    var value = data.result;
+    
+    if(!this.element){
+        this.sleepValue = value;
+    }else{
+        this.element.value = value;
+        this.sleepValue = false;
+    }
 };
 
 Input.prototype.setValue = function(value) {
-    this.element.value = value;
+    if(!this.element){
+        this.sleepValue = value;
+    }else{
+        this.element.value = value;
+        this.sleepValue = false;
+    }
 };
 
 Input.prototype.getValue = function() {

@@ -27,6 +27,9 @@ https://github.com/devcem/Playcanvas-UI-Components
 And here is the youtube video, in case you need assist :
 https://www.youtube.com/watch?v=YYoOtq_Spio&feature=youtu.be
 
+Video for template system : 
+
+
 ## Features
 - storeValue : This option basically stores the input value after change. It can be useful for settings and username.
 - focusEntity : It simply shows or hides an entity on playcanvas while input active.
