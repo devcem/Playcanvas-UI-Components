@@ -2,12 +2,85 @@ var Container = pc.createScript('container');
 
 Container.attributes.add('id', { type : 'string' });
 Container.attributes.add('onInit', { type : 'string' });
+Container.attributes.add('onInitTrigger', { type : 'string' });
 Container.attributes.add('innerHTML', { type : 'string' });
 Container.attributes.add('onDestroy', { type : 'string' });
 Container.attributes.add('autoResize', { type : 'boolean', default : true });
 Container.attributes.add('fullyRemove', { type : 'boolean' });
+Container.attributes.add('showOnly', { 
+    type: 'string',
+    enum: [
+        { 'Both'    : 'Both' },
+        { 'Desktop' : 'Desktop' },
+        { 'Mobile'  : 'Mobile' }
+    ],
+    default: 'Both'
+});
 
 Container.prototype.initialize = function() {
+    if(Utils.isMobile()){
+        if(this.showOnly == 'Desktop'){
+            this.entity.destroy();
+            return false;
+        }
+    }else{
+        if(this.showOnly == 'Mobile'){
+            this.entity.destroy();
+            return false;
+        }
+    }
+    
+    this.isDestroyed = false;
+    this.lastUpdate  = Date.now();
+    
+    this.triggerOnInit();
+    this.on('state', function(self){
+        if(this.entity.enabled){
+            this.triggerOnInit();
+            this.element.style.display = 'block'; 
+        }else{
+            if(this.fullyRemove){
+                this.element.remove();
+            }else{
+                this.element.style.display = 'none';
+            }
+        }
+    }, this);
+    
+    this.app.on('DOM:Clear', this.onDOMClear, this);
+    this.app.on('DOM:Update', this.onDomUpdate, this);
+    this.on('destroy', this._onDestroy, this);
+};
+
+Container.prototype.onDOMClear = function(){
+    this.entity.enabled = false;
+};
+
+Container.prototype._onDestroy = function(){
+    this.isDestroyed = true;
+    
+    if(this.onDestroy !== 'undefined'){
+        try{
+            eval(this.onDestroy);   
+        }catch(e){
+            //console.log(e);
+        }
+        
+        try{
+            if(this.fullyRemove){
+                this.element.remove();
+            }
+        }catch(e){
+            
+        }
+    }
+};
+
+Container.prototype.onDomUpdate = function(){
+    this.updateStyle();
+};
+
+Container.prototype.triggerOnInit = function() {
     //if there is already a div with same id set it as an element
     var element = document.getElementById(this.id);
     
@@ -31,23 +104,8 @@ Container.prototype.initialize = function() {
     }
     
     this.element.style.overflow = 'hidden';
-    
     this.updateStyle();
-    
-    setTimeout(function(_self){
-        _self._onInit();
-    }, 150, this);
-    
-    this.on('state', function(self){
-        if(this.entity.enabled){
-            this._onInit();
-            this.element.style.display = 'block'; 
-        }else{
-            this.element.style.display = 'none'; 
-        }
-    }, this);
-    
-    this.on('destroy', this._onDestroy, this);
+    this._onInit();
 };
 
 Container.prototype._onInit = function() {
@@ -58,28 +116,23 @@ Container.prototype._onInit = function() {
             //console.log(e);
         }
     }
-};
-
-Container.prototype._onDestroy = function() {
-    if(this.onDestroy !== 'undefined'){
-        try{
-            eval(this.onDestroy);   
-        }catch(e){
-            //console.log(e);
-        }
-        
-        try{
-            if(this.fullyRemove){
-                this.element.remove();
-            }
-        }catch(e){
-            
-        }
+    
+    if(this.onInitTrigger){
+        this.app.fire(this.onInitTrigger, true);
     }
 };
 
-Container.prototype.updateStyle = function() {    
-    if(this.entity.element.screenCorners){
+Container.prototype.updateStyle = function() { 
+    if(this.isDestroyed){
+        return false;
+    }
+    
+    if(
+        this.entity &&
+        this.entity.enabled && 
+        this.entity.element && 
+        this.entity.element.screenCorners
+    ){
         var position = this.entity.element.screenCorners;
         var ratio = 1 / this.app.graphicsDevice.maxPixelRatio;
     
@@ -98,8 +151,4 @@ Container.prototype.updateStyle = function() {
             this.element.style.transformOrigin = 'left bottom';
         }
     }
-};
-
-Container.prototype.update = function(dt) {
-    this.updateStyle();
 };
