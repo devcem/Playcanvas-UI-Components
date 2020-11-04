@@ -171,7 +171,7 @@ Timeline.prototype.onPlay = function() {
             x : this.endFrame.position.x,
             y : this.endFrame.position.y,
             z : this.endFrame.position.z
-        }, this.duration, this.getEase());
+        }, this.duration, this.getEase()).delay(this.delay);
         
         this.positionFrames.start();
     }
@@ -183,7 +183,7 @@ Timeline.prototype.onPlay = function() {
             x : this.endFrame.rotation.x,
             y : this.endFrame.rotation.y,
             z : this.endFrame.rotation.z
-        }, this.duration, this.getEase());
+        }, this.duration, this.getEase()).delay(this.delay);
         
         this.rotationFrames.start();
     }
@@ -195,7 +195,7 @@ Timeline.prototype.onPlay = function() {
             x : this.endFrame.scale.x,
             y : this.endFrame.scale.y,
             z : this.endFrame.scale.z
-        }, this.duration, this.getEase());
+        }, this.duration, this.getEase()).delay(this.delay);
         
         this.scaleFrames.start();
     }
@@ -205,7 +205,7 @@ Timeline.prototype.onPlay = function() {
             this.entity.element
         ).to({
             opacity : this.endFrame.opacity
-        }, this.duration, this.getEase());
+        }, this.duration, this.getEase()).delay(this.delay);
         
         this.opacityFrames.start();
     }
@@ -219,7 +219,7 @@ Timeline.prototype.onPlay = function() {
             this.animation
         ).to({
             custom : value
-        }, this.duration, this.getEase());
+        }, this.duration, this.getEase()).delay(this.delay);
         
         this.customFrames.on('update', function(){
             eval('this.entity.' + query + ' = ' + self.animation.custom);
