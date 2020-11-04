@@ -6,6 +6,7 @@ Timeline.attributes.add('position', { type : 'boolean', default : false });
 Timeline.attributes.add('scale', { type : 'boolean', default : false });
 Timeline.attributes.add('rotation', { type : 'boolean', default : false });
 Timeline.attributes.add('opacity', { type : 'boolean', default : false });
+Timeline.attributes.add('custom', { type : 'boolean', default : false });
 Timeline.attributes.add('duration', { type : 'number', default : 1 });
 Timeline.attributes.add('delay', { type : 'number', default : 0 });
 Timeline.attributes.add('ease', {
@@ -62,6 +63,10 @@ Timeline.attributes.add('startFrame', {
         name  : 'opacity',
         type  : 'number',
         default : 1
+    },{
+        name  : 'custom',
+        type  : 'string',
+        description : 'For example camera.fov = 40'
     }]
 });
 
@@ -81,10 +86,18 @@ Timeline.attributes.add('endFrame', {
         name  : 'opacity',
         type  : 'number',
         default : 1
+    },{
+        name  : 'custom',
+        type  : 'string',
+        description : 'For example camera.fov = 40'
     }]
 });
 
 Timeline.prototype.initialize = function() {
+    this.animation = {
+        custom : 0  
+    };
+    
     this.app.on(this.entity.name + ':Timeline', this.onPlay, this);
     
     if(this.autoplay){
@@ -112,6 +125,10 @@ Timeline.prototype.reset = function() {
     if(this.opacityFrames){
         this.opacityFrames.stop();    
     }
+    
+    if(this.customFrames){
+        this.customFrames.stop();    
+    }
 };
 
 Timeline.prototype.setFirstFrame = function() {
@@ -130,9 +147,20 @@ Timeline.prototype.setFirstFrame = function() {
     if(this.opacity){
         this.entity.element.opacity = this.startFrame.opacity;
     }
+    
+    if(this.custom){
+        var parts = this.startFrame.custom.split(' = ');
+        var query = parts[0];
+        var value = parseFloat(parts[1]);
+        
+        this.animation.custom = value;
+        eval('this.entity.' + this.custom);
+    }
 };
 
 Timeline.prototype.onPlay = function() {
+    var self = this;
+    
     this.reset();
     this.setFirstFrame();
     
@@ -180,5 +208,23 @@ Timeline.prototype.onPlay = function() {
         }, this.duration, this.getEase());
         
         this.opacityFrames.start();
+    }
+    
+    if(this.custom){
+        var parts = this.endFrame.custom.split(' = ');
+        var query = parts[0];
+        var value = parseFloat(parts[1]);
+        
+        this.customFrames = this.entity.tween(
+            this.animation
+        ).to({
+            custom : value
+        }, this.duration, this.getEase());
+        
+        this.customFrames.on('update', function(){
+            eval('this.entity.' + query + ' = ' + self.animation.custom);
+        });
+        
+        this.customFrames.start();
     }
 };
