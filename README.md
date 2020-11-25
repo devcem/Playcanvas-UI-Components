@@ -33,3 +33,7 @@ Video for template system :
 ## Features
 - storeValue : This option basically stores the input value after change. It can be useful for settings and username.
 - focusEntity : It simply shows or hides an entity on playcanvas while input active.
+
+## Changelog
+- Timeline.js now can play same animation again if autoplay is enabled on state change.
+- Container.js bugs fixed.
