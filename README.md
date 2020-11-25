@@ -29,6 +29,10 @@ https://www.youtube.com/watch?v=YYoOtq_Spio&feature=youtu.be
 
 Video for template system : 
 
+## Timer.js
+Timer.js is a script to show count backs in game. For example you want to show a countdown from 10 to zero. Put a text, set 10 it's text and put timer.js on it. It will automatically count down from that time.
+
+You can use timer.js at the end of the game, for vote timer or game start events.
 
 ## Features
 - storeValue : This option basically stores the input value after change. It can be useful for settings and username.
