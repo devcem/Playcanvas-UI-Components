@@ -99,10 +99,26 @@ Timeline.prototype.initialize = function() {
     };
     
     this.app.on(this.entity.name + ':Timeline', this.onPlay, this);
+    this.on('destroy', this.onDestroy, this);
+    this.on('state', this.onStateChange, this);
     
     if(this.autoplay){
         this.onPlay();
     }
+};
+
+Timeline.prototype.onStateChange = function(state) {
+    if(state === true){
+        if(this.autoplay){
+            this.onPlay();
+        }
+    }else{
+        this.reset();
+    }
+};
+
+Timeline.prototype.onDestroy = function() {
+    
 };
 
 Timeline.prototype.getEase = function() {
